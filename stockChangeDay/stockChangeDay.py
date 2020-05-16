@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
+import data as d
 
 tickers = pd.read_csv('C:\\Users\\chlsp\\Desktop\\Python\\EQUITY_L.csv')
 extension = 'NS'
@@ -27,22 +28,27 @@ all_stock_data = pd.DataFrame()
 LTP = pd.Series([])
 Open = pd.Series([])
 Total = pd.Series([])
+Change = pd.Series([])
 for i in symbols.index:
     try:
         stock = yf.Ticker(symbols[i])
-        data = stock.history(period="1d", interval="15m")
+        data = stock.history(period="1d", interval=d.interval)
+        previousDayData = yf.download(symbols[i], start=d.previousDayDate, end=d.todaysDate)
         data.dropna(how='all',inplace=True)
+        previousDayData.dropna(how='all',inplace=True)
         print("%d out of %d completed" % (i+1, len(symbols)))
         data.reset_index(drop=False, inplace=True)
+        previousDayData.reset_index(drop=False, inplace=True)
         if len(all_stock_data) == 0:
             all_stock_data = calculate_PL_percentage(data)
             all_stock_data.rename(columns = {'percentage':symbols[i]}, inplace=True)
         else:
-            all_stock_data = pd.merge(all_stock_data, calculate_PL_percentage(data), how='outer', on='dateTime')
+            all_stock_data = pd.merge(all_stock_data, calculate_PL_percentage(data), how='left', on='dateTime')
             all_stock_data.rename(columns = {'percentage':symbols[i]}, inplace=True)
         Total[symbols[i]] = all_stock_data[symbols[i]].sum()
         Open[symbols[i]] = round(data['Open'][0],2)
         LTP[symbols[i]] = round(data['Close'][len(data)-1],2)
+        Change[symbols[i]] = round(((Open[symbols[i]] - previousDayData['Adj Close'][0])/previousDayData['Adj Close'][0])*100,2)
     except:
         print("error extracting symbol %s" % (symbols[i]))
 all_stock_data = all_stock_data.sort_values(by='dateTime')
@@ -53,6 +59,7 @@ all_stock_data = all_stock_data.transpose()
 all_stock_data.insert(0, 'Open', Open)
 all_stock_data.insert(1, 'LTP', LTP)
 all_stock_data.insert(2, 'Totals', Total)
+all_stock_data.insert(3, 'Change', Change)
 all_stock_data.reset_index(drop=False, inplace=True)
 all_stock_data.rename(columns = {'index':'Symbol'}, inplace=True)
 all_stock_data = all_stock_data.sort_values(by='Totals', ascending=False)
@@ -60,5 +67,5 @@ all_stock_data = pd.concat([all_stock_data.loc[all_stock_data['LTP'] < 201], all
 all_stock_data = all_stock_data.loc[all_stock_data['Totals'] != 0]
 all_stock_data['Symbol'] = all_stock_data['Symbol'].str.replace(".NS", "")
 
-path = "D:\\Stocks\\" + str(today) + "\\stocks_Interval.xlsx"
+path = "D:\\Stocks\\" + str(today) + "\\stocks_Interval_" + d.interval + ".xlsx"
 all_stock_data.to_excel(path, index=False)
