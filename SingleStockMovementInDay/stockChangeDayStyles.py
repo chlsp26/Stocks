@@ -14,7 +14,7 @@ path = "D:\\Stocks\\" + str(today) + "\\stocks_Interval_" + d.interval + ".xlsx"
 wb = load_workbook(path)
 ws = wb.active
 ft = Font(color="FFFFFF", bold=True)
-for columns in range(5,len(ws[1])+1,1):
+for columns in range(6,len(ws[1])+1,1):
     for rows in range(2,len(ws['E'])+1,1):
         if not(ws.cell(row=rows,column=columns).value is None) and ws.cell(row=rows,column=columns).value < 0:
             cell = ws.cell(row=rows,column=columns)

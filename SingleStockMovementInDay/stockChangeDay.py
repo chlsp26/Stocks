@@ -4,6 +4,7 @@ from datetime import timedelta
 from datetime import datetime
 from datetime import date
 import data as d
+import os
 
 tickers = pd.read_csv('C:\\Users\\chlsp\\Desktop\\Python\\EQUITY_L.csv')
 extension = 'NS'
@@ -57,15 +58,20 @@ all_stock_data.rename(columns = {'dateTime':'Symbol'}, inplace=True)
 all_stock_data.set_index("Symbol", inplace = True)
 all_stock_data = all_stock_data.transpose()
 all_stock_data.insert(0, 'Open', Open)
-all_stock_data.insert(1, 'LTP', LTP)
-all_stock_data.insert(2, 'Totals', Total)
-all_stock_data.insert(3, 'Change', Change)
+all_stock_data.insert(1, 'Change', Change)
+all_stock_data.insert(2, 'LTP', LTP)
+all_stock_data.insert(3, 'Totals', Total)
 all_stock_data.reset_index(drop=False, inplace=True)
 all_stock_data.rename(columns = {'index':'Symbol'}, inplace=True)
 all_stock_data = all_stock_data.sort_values(by='Totals', ascending=False)
-all_stock_data = pd.concat([all_stock_data.loc[all_stock_data['LTP'] < 201], all_stock_data.loc[all_stock_data['LTP'] >= 201]])
-all_stock_data = all_stock_data.loc[all_stock_data['Totals'] != 0]
+# all_stock_data = pd.concat([all_stock_data.loc[all_stock_data['LTP'] < 201], all_stock_data.loc[all_stock_data['LTP'] >= 201]])
+all_stock_data = all_stock_data.loc[all_stock_data['Open'].notnull()]
 all_stock_data['Symbol'] = all_stock_data['Symbol'].str.replace(".NS", "")
+
+try:
+    os.mkdir('D:\\Stocks\\{}'.format(today))
+except OSError as error:
+    print(error)
 
 path = "D:\\Stocks\\" + str(today) + "\\stocks_Interval_" + d.interval + ".xlsx"
 all_stock_data.to_excel(path, index=False)

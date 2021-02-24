@@ -1,2 +1,0 @@
-import GetHistStockData
-import applystyles
